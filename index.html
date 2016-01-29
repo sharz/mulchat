@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>chatApp</title>
+    <style>
+        #chat{
+            height: 500px;
+        }
+        #contentWrap{
+          display: none;
+    
+        }
+        #chatWrap{
+          float:left;
+          border:1px #000 solid;
+        }
+        .error{
+          color: red;
+        }
+        .whisper{
+          color: gray;
+          font-style :italic;
+        }
+        #but{
+          color: red;
+          background-color: yellow;
+        }
+        #btn{
+          color:red;
+        }
+    </style>
+</head>
+<body>
+  <div id="nickWrap">
+    <p>Enter a username:</p>
+    <p id="nickError"></p>
+    <form id='setNick'>
+      <input size="35" id="nickname"></input>
+      <input type="submit" id='but'></input>
+    </form>
+  </div>
+  <div id="contentWrap">
+    <div id="chatWrap">
+<div id="chat"></div>
+<form id="send-message">
+    <input size="35" id="message"/>
+    <input type="submit" id="btn"/>
+</form>
+</div>
+<div id="users"></div>
+</div>
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    $(function($){
+        var socket=io.connect();
+        var nickForm=$('#setNick');
+        var $nickError=$('#nickError');
+        var $nickBox=$('#nickname');
+        var $users= $('#users');
+        var $messageForm=$('#send-message');
+        var $messageBox=$('#message');
+        var $chat=$('#chat');
+       nickForm.submit(function(e){
+          e.preventDefault();
+          socket.emit('new user',$nickBox.val(),function(data){
+            if(data){
+              $('#nickWrap').hide();
+              $('#contentWrap').show();
+            }
+            else{
+              $nickError.html('That user is already exists! Try again.');
+            }
+          });
+          $nickBox.val('');
+        });
+        socket.on('usernames',function(data){
+          var html=' ';
+          for(var i=0;i <data.length; i++){
+            html +=data[i] + '<br/>'
+          }
+          $users.html(html);
+        })
+        $messageForm.submit(function(e){
+            e.preventDefault();
+            socket.emit('send message',$messageBox.val(),function(data){
+              $chat.append('<sapn class="error"><b>  ' + data + "</span><br/>");
+            });
+
+            $messageBox.val('');
+
+        });
+
+        socket.on('new message', function (data){
+              $chat.append('<sapn class="msg"><b>' + data.nick + ': </b> ' + data.msg + "</span><br/>");
+        });
+        socket.on('whisper', function (data){
+              $chat.append('<sapn class="whisper"><b>' + data.nick + ': </b> ' + data.msg + "</span><br/>");
+        });
+    });
+</script>
+</body>
+</html>
